@@ -1,0 +1,28 @@
+[submodule "vendor/nonebot-plugin-fanqie-verify"]
+	path = vendor/nonebot-plugin-fanqie-verify
+	url = https://github.com/xinvxueyuan/nonebot-plugin-fanqie-verify.git
+	branch = main
+[submodule "vendor/lingchu-bot"]
+	path = vendor/lingchu-bot
+	url = https://github.com/xinvxueyuan/lingchu-bot.git
+	branch = feat/webui
+[submodule "vendor/nonebot-plugin-llbot-alert"]
+	path = vendor/nonebot-plugin-llbot-alert
+	url = https://github.com/xinvxueyuan/nonebot-plugin-llbot-alert.git
+	branch = main
+[submodule "vendor/nonebot-plugin-parser-lite"]
+	path = vendor/nonebot-plugin-parser-lite
+	url = https://github.com/sokoko-org/nonebot-plugin-parser-lite.git
+	branch = main
+[submodule "vendor/nonebot-plugin-merge-forward"]
+	path = vendor/nonebot-plugin-merge-forward
+	url = https://github.com/xinvxueyuan/nonebot-plugin-merge-forward.git
+	branch = main
+[submodule "vendor/nonebot-plugin-ciyuan-image"]
+	path = vendor/nonebot-plugin-ciyuan-image
+	url = https://github.com/xinvxueyuan/nonebot-plugin-ciyuan-image.git
+	branch = main
+[submodule "vendor/nonebot-plugin-auto-unmute-superuser"]
+	path = vendor/nonebot-plugin-auto-unmute-superuser
+	url = https://github.com/xinvxueyuan/nonebot-plugin-auto-unmute-superuser.git
+	branch = main
