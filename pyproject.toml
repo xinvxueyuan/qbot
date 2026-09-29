@@ -73,3 +73,17 @@ target-version = "py313"
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "PL", "RUF"]
 ignore = ["PLR0913"]
+
+[tool.nonebot]
+# 插件全部来自 vendor/ 下的 git 子模块（见 .gitmodules）。
+# 注意：plugin_dirs **不会**由 nonebot.init() 自动生效，
+# 必须由 bot.py 显式调用 nonebot.load_from_toml(...)。
+plugin_dirs = [
+    "vendor/nonebot-plugin-fanqie-verify/src/plugins",
+    "vendor/lingchu-bot/src/plugins",
+    "vendor/nonebot-plugin-llbot-alert/src/plugins",
+    "vendor/nonebot-plugin-parser-lite/src",
+    "vendor/nonebot-plugin-merge-forward/src/plugins",
+    "vendor/nonebot-plugin-ciyuan-image/src/plugins",
+    "vendor/nonebot-plugin-auto-unmute-superuser/src/plugins",
+]

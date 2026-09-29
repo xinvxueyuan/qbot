@@ -1,8 +1,0 @@
-{
-  "schema_version": 1,
-  "id": "default",
-  "name": "Default",
-  "desc": "内置默认主题",
-  "author": "sokoko-org",
-  "version": "1.0.0"
-}
