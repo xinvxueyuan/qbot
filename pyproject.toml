@@ -1,0 +1,75 @@
+[project]
+name = "qbot"
+version = "0.1.0"
+description = "原生 NoneBot2 机器人（替代 zhenxun-bot，承载 7 个零耦合插件）"
+requires-python = ">=3.13, <3.14"
+# 依赖由 `derive_deps.py` 从 zhenxun venv 的**已验证可用版本集**反推（模块名 → 发行包）。
+# 全部 == 锁定：目标是「迁移后行为与迁移前完全一致」，不接受版本漂移。
+dependencies = [
+    # --- 核心 ---
+    "nonebot2[fastapi,httpx,websockets]==2.5.0",
+    "nonebot-adapter-onebot==2.4.6",
+    # --- NoneBot 生态插件（7 个插件的直接依赖）---
+    "nonebot-plugin-alconna==0.62.0",
+    "nonebot-plugin-apscheduler==0.5.0",
+    "nonebot-plugin-htmlrender==0.6.7",
+    "nonebot-plugin-localstore==0.7.4",
+    "nonebot-plugin-orm[aiosqlite]==0.8.3",
+    "nonebot-plugin-uninfo==0.11.0",
+    # --- 运行库 ---
+    "aiofiles==24.1.0",
+    # aiosqlite 是 nonebot-plugin-orm 的默认 SQLite 驱动：没有它，orm 在
+    # 未配置 SQLALCHEMY_DATABASE_URL 时会 raise ValueError（启动失败）。
+    # 依赖推导脚本漏了它，因为插件不直接 import 它 —— 由干跑实测抓出。
+    "aiosqlite==0.17.0",
+    "alembic==1.19.1",
+    "anyio==4.13.0",
+    "APScheduler==3.11.2",
+    "arclet-alconna==1.8.44",
+    "arclet-alconna-tools==0.7.12",
+    "beautifulsoup4==4.14.3",
+    "cryptography==46.0.7",
+    "curl_cffi==0.16.0",
+    "httpx==0.28.1",
+    "Jinja2==3.1.6",
+    "json_repair==0.54.3",
+    "msgspec==0.21.1",
+    "openai==3.8.0",
+    "packaging==26.0",
+    # playwright 必须锁 1.57.0：/root/.cache/ms-playwright 里已装的浏览器
+    # 是 chromium-1200（对应 1.57.0），换版本会要求别的 revision → 渲染失败。
+    "playwright==1.57.0",
+    "protobuf==7.35.1",
+    "pydantic==2.13.0",
+    "qrcode==8.2",
+    "rich==15.0.0",
+    "rtoml==0.13.0",
+    "SQLAlchemy==2.0.52",
+    "starlette==1.0.0",
+    "tarina==0.7.3",
+    "typing_extensions==4.15.0",
+    "ujson==5.12.0",
+    "yarl==1.23.0",
+    "puremagic>=2.2.0",
+    "pillow>=12.3.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.6",
+    "pyright>=1.1",
+]
+
+[tool.uv]
+# 不强制 only-managed：让 uv 自行选择 3.13.x（系统 3.13.5 或托管版皆可），
+# 避免在服务器上触发不必要的 Python 下载。requires-python 已限定 3.13。
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "PL", "RUF"]
+ignore = ["PLR0913"]

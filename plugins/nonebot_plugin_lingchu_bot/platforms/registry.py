@@ -1,0 +1,505 @@
+"""Adapter-to-platform registry.
+
+The bot should make business decisions against platform capabilities instead
+of concrete NoneBot adapters. Adapter modules stay at the edge of the system.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from enum import StrEnum
+import json
+from typing import Any, Final, cast
+
+from ..core.config import get_runtime_config
+
+type AdapterConfig = str | list[str] | tuple[str, ...] | None
+_UNSET: Final = object()
+
+
+class PlatformCapability(StrEnum):
+    """Cross-platform management features Lingchu can reason about."""
+
+    GROUP_MANAGEMENT = "group_management"
+    MEMBER_MODERATION = "member_moderation"
+    MEMBER_PROFILE = "member_profile"
+    GROUP_PROFILE = "group_profile"
+    ANNOUNCEMENT = "announcement"
+    APPLICATION_OPERATION = "application_operation"
+    MESSAGE_STORE = "message_store"
+    API_AUDIT = "api_audit"
+
+
+@dataclass(frozen=True, slots=True)
+class PlatformProfile:
+    """Runtime profile shared by one or more concrete adapters."""
+
+    platform_id: str
+    display_name: str
+    adapter_names: frozenset[str]
+    nonebot_adapters: tuple[str, ...]
+    adapter_name_map: tuple[tuple[str, str], ...]
+    capabilities: frozenset[PlatformCapability]
+    permission_module: str | None = None
+    implemented: bool = True
+
+
+@dataclass(frozen=True, slots=True)
+class ProtocolImplementationInfo:
+    """Metadata for a protocol implementation under a specific adapter."""
+
+    protocol_id: str
+    adapter_id: str
+    display_name: str
+    module_path: str
+
+
+class PlatformAdapterConflictError(RuntimeError):
+    """同一平台适配器互斥配置错误。"""
+
+    def __init__(
+        self,
+        *,
+        platform_id: str,
+        adapters: frozenset[str],
+        source: str,
+    ) -> None:
+        self.platform_id = platform_id
+        self.adapters = adapters
+        self.source = source
+        adapter_list = ", ".join(sorted(adapters))
+        # 找出该平台的所有已知适配器及其用户友好的名称
+        profile = next(
+            (p for p in PLATFORM_PROFILES if p.platform_id == platform_id), None
+        )
+        if profile:
+            # adapter_name_map: (用户可见名, NoneBot ID)
+            # -> 反转为 {NoneBot ID: 用户可见名}
+            adapter_display_map = {
+                nb_id: display_name for display_name, nb_id in profile.adapter_name_map
+            }
+            available = ", ".join(
+                f"{pid} ({adapter_display_map.get(pid, 'unknown')})"
+                for pid in sorted(profile.nonebot_adapters)
+            )
+        else:
+            available = ", ".join(sorted(adapters))
+        suggestion = (
+            "请在 NoneBot2 配置文件(.env.dev)中通过 LINGCHUAdapter 指定要启用的适配器，"
+            "只保留一个。例如：LINGCHUAdapter=~onebot.v11"
+        )
+        super().__init__(
+            f"Lingchu 平台适配器冲突：平台 {platform_id!r} "
+            f"检测到多个适配器同时运行：{adapter_list}。"
+            f"每个平台只能由一个适配器提供服务。"
+            f"\n该平台支持的适配器：{available}"
+            f"\n{suggestion}"
+        )
+
+
+class PlatformAdapterNotLoadedError(RuntimeError):
+    """Lingchu selected an adapter that NoneBot did not register."""
+
+    def __init__(
+        self,
+        *,
+        adapter_id: str,
+        registered_adapters: frozenset[str],
+    ) -> None:
+        self.adapter_id = adapter_id
+        self.registered_adapters = registered_adapters
+        registered = (
+            ", ".join(sorted(registered_adapters)) if registered_adapters else "none"
+        )
+        profile = _ADAPTER_PROFILE_INDEX.get(adapter_id.casefold())
+        display_name = adapter_id
+        if profile is not None:
+            display_map = {
+                nb_id: display for display, nb_id in profile.adapter_name_map
+            }
+            display_name = display_map.get(adapter_id, adapter_id)
+        super().__init__(
+            "Lingchu 已选择适配器 "
+            f"{adapter_id} ({display_name})，但 NoneBot 未加载/注册该适配器。"
+            f"\n当前 NoneBot 已注册的 Lingchu 已知适配器：{registered}"
+            "\n请加载匹配的 NoneBot 适配器，或修改 LINGCHUAdapter。"
+        )
+
+
+class PlatformAdapterUnknownError(RuntimeError):
+    """Lingchu adapter configuration contains unknown adapter ids."""
+
+    def __init__(self, adapters: frozenset[str]) -> None:
+        self.adapters = adapters
+        adapter_list = ", ".join(sorted(adapters))
+        known = ", ".join(
+            adapter_id
+            for profile in iter_platform_profiles()
+            for adapter_id in profile.nonebot_adapters
+        )
+        super().__init__(
+            "LINGCHUAdapter 声明了 Lingchu 尚未实现或无法识别的适配器："
+            f"{adapter_list}。"
+            f"\n当前可选择的适配器：{known}"
+            "\n请改用已实现的 Lingchu 适配器，或等待对应平台 profile 实现。"
+        )
+
+
+UNKNOWN_PLATFORM_ID: Final[str] = "unknown"
+
+QQ_CAPABILITIES: Final[frozenset[PlatformCapability]] = frozenset({
+    PlatformCapability.GROUP_MANAGEMENT,
+    PlatformCapability.MEMBER_MODERATION,
+    PlatformCapability.MEMBER_PROFILE,
+    PlatformCapability.GROUP_PROFILE,
+    PlatformCapability.ANNOUNCEMENT,
+    PlatformCapability.APPLICATION_OPERATION,
+    PlatformCapability.MESSAGE_STORE,
+    PlatformCapability.API_AUDIT,
+})
+
+PLATFORM_PROFILES: Final[tuple[PlatformProfile, ...]] = (
+    PlatformProfile(
+        platform_id="qq",
+        display_name="QQ",
+        adapter_names=frozenset({
+            "onebot v11",
+            "onebot11",
+        }),
+        nonebot_adapters=("~onebot.v11",),
+        adapter_name_map=(
+            ("onebot v11", "~onebot.v11"),
+            ("onebot11", "~onebot.v11"),
+        ),
+        capabilities=QQ_CAPABILITIES,
+        permission_module="..platforms.qq.permissions",
+    ),
+)
+
+_PROTOCOL_DISPLAY_NAMES: Final[dict[str, str]] = {
+    "default": "Default",
+    "napcat": "NapCat",
+}
+
+_PROTOCOL_IMPLEMENTATIONS: Final[tuple[ProtocolImplementationInfo, ...]] = (
+    ProtocolImplementationInfo(
+        protocol_id="default",
+        adapter_id="~onebot.v11",
+        display_name=_PROTOCOL_DISPLAY_NAMES["default"],
+        module_path="handle.qq.adapters.onebot11.default",
+    ),
+    ProtocolImplementationInfo(
+        protocol_id="napcat",
+        adapter_id="~onebot.v11",
+        display_name=_PROTOCOL_DISPLAY_NAMES["napcat"],
+        module_path="handle.qq.adapters.onebot11.napcat",
+    ),
+)
+
+_ADAPTER_PROFILE_INDEX: Final[dict[str, PlatformProfile]] = {
+    adapter_id.casefold(): profile
+    for profile in PLATFORM_PROFILES
+    for adapter_id in profile.nonebot_adapters
+} | {
+    adapter_name.casefold(): profile
+    for profile in PLATFORM_PROFILES
+    for adapter_name, _adapter_id in profile.adapter_name_map
+}
+
+_ADAPTER_ID_INDEX: Final[dict[str, str]] = {
+    adapter_id.casefold(): adapter_id
+    for profile in PLATFORM_PROFILES
+    for adapter_id in profile.nonebot_adapters
+} | {
+    adapter_name.casefold(): adapter_id
+    for profile in PLATFORM_PROFILES
+    for adapter_name, adapter_id in profile.adapter_name_map
+}
+
+
+def iter_platform_profiles(
+    *,
+    implemented_only: bool = True,
+) -> tuple[PlatformProfile, ...]:
+    """Return known platform profiles."""
+    if implemented_only:
+        return tuple(profile for profile in PLATFORM_PROFILES if profile.implemented)
+    return PLATFORM_PROFILES
+
+
+def is_profile_enabled(
+    profile: PlatformProfile,
+    configured: AdapterConfig | object = _UNSET,
+) -> bool:
+    """Return whether any adapter of a platform profile is selected as enabled.
+
+    A platform is only considered enabled when at least one of its NoneBot
+    adapters is part of the resolved ``LINGCHUAdapter`` selection, so platform
+    modules for unused platforms are never imported or seeded.
+    """
+    enabled = resolve_enabled_adapters(configured)
+    return any(adapter in enabled for adapter in profile.nonebot_adapters)
+
+
+def iter_enabled_profiles(
+    *,
+    implemented_only: bool = True,
+    configured: AdapterConfig | object = _UNSET,
+) -> tuple[PlatformProfile, ...]:
+    """Return platform profiles whose adapter is enabled in configuration."""
+    return tuple(
+        profile
+        for profile in iter_platform_profiles(implemented_only=implemented_only)
+        if is_profile_enabled(profile, configured)
+    )
+
+
+def parse_configured_adapters(configured: AdapterConfig) -> tuple[str, ...]:
+    """Parse Lingchu adapter configuration into normalized adapter ids."""
+    if configured is None:
+        return ()
+    raw_values: tuple[Any, ...]
+    if isinstance(configured, str):
+        raw_values = tuple(configured.split("+"))
+    else:
+        raw_values = tuple(configured)
+
+    parsed: list[str] = []
+    for raw_value in raw_values:
+        value = str(raw_value).strip()
+        if not value:
+            continue
+        normalized = value.casefold()
+        if not normalized.startswith("~"):
+            normalized = f"~{normalized}"
+        parsed.append(normalized)
+    return tuple(parsed)
+
+
+def _global_configured_adapters() -> str | list[str] | tuple[str, ...] | None:
+    return get_runtime_config().lingchu_adapter
+
+
+def _resolve_known_adapter_id(adapter_name: str) -> str | None:
+    normalized = adapter_name.strip().casefold()
+    if not normalized:
+        return None
+    if not normalized.startswith("~"):
+        normalized = f"~{normalized}"
+    return _ADAPTER_ID_INDEX.get(normalized) or _ADAPTER_ID_INDEX.get(
+        adapter_name.strip().casefold()
+    )
+
+
+def resolve_adapter_id(adapter_name: str) -> str | None:
+    """Resolve a display or NoneBot adapter name to Lingchu's canonical id."""
+    return _resolve_known_adapter_id(adapter_name)
+
+
+def _profile_enabled_adapter(
+    profile: PlatformProfile,
+    configured_adapters: tuple[str, ...],
+    *,
+    source: str,
+) -> str:
+    configured_for_profile = _configured_profile_adapters(profile, configured_adapters)
+    if len(configured_for_profile) > 1:
+        raise PlatformAdapterConflictError(
+            platform_id=profile.platform_id,
+            adapters=configured_for_profile,
+            source=source,
+        )
+    if configured_for_profile:
+        return next(iter(configured_for_profile))
+    return profile.nonebot_adapters[0]
+
+
+def _configured_profile_adapters(
+    profile: PlatformProfile,
+    configured_adapters: tuple[str, ...],
+) -> frozenset[str]:
+    return frozenset(
+        adapter
+        for adapter in configured_adapters
+        if _ADAPTER_PROFILE_INDEX.get(adapter) == profile
+    )
+
+
+def _unknown_configured_adapters(
+    configured_adapters: tuple[str, ...],
+) -> frozenset[str]:
+    return frozenset(
+        adapter
+        for adapter in configured_adapters
+        if _resolve_known_adapter_id(adapter) is None
+    )
+
+
+def resolve_enabled_adapters(
+    configured: AdapterConfig | object = _UNSET,
+) -> set[str]:
+    """Return the single enabled adapter for each implemented platform."""
+    raw_config = (
+        _global_configured_adapters()
+        if configured is _UNSET
+        else cast("AdapterConfig", configured)
+    )
+    configured_adapters = parse_configured_adapters(raw_config)
+    unknown_adapters = _unknown_configured_adapters(configured_adapters)
+    if unknown_adapters:
+        raise PlatformAdapterUnknownError(unknown_adapters)
+    if not configured_adapters:
+        return {PLATFORM_PROFILES[0].nonebot_adapters[0]}
+    return {
+        _profile_enabled_adapter(profile, configured_adapters, source="configuration")
+        for profile in iter_platform_profiles()
+        if _configured_profile_adapters(profile, configured_adapters)
+    }
+
+
+def is_adapter_enabled(
+    adapter_name: str,
+    configured: AdapterConfig | object = _UNSET,
+) -> bool:
+    """Return whether a concrete adapter is selected for its platform."""
+    adapter_id = _resolve_known_adapter_id(adapter_name)
+    if adapter_id is None:
+        return False
+    return adapter_id in resolve_enabled_adapters(configured)
+
+
+def is_known_adapter(adapter_name: str) -> bool:
+    """Return whether an adapter is part of a known Lingchu platform profile."""
+    return _resolve_known_adapter_id(adapter_name) is not None
+
+
+def validate_platform_adapter_selection(
+    registered_adapter_names: tuple[str, ...],
+    configured: AdapterConfig | object = _UNSET,
+) -> None:
+    """Validate runtime adapter registration against Lingchu platform selection."""
+    validate_enabled_adapters_loaded(registered_adapter_names, configured)
+
+
+def resolve_registered_adapters(
+    registered_adapter_names: tuple[str, ...],
+) -> set[str]:
+    """Resolve NoneBot registered adapter names to Lingchu adapter ids."""
+    return {
+        adapter_id
+        for adapter_name in registered_adapter_names
+        if (adapter_id := _resolve_known_adapter_id(adapter_name)) is not None
+    }
+
+
+def validate_enabled_adapters_loaded(
+    registered_adapter_names: tuple[str, ...],
+    configured: AdapterConfig | object = _UNSET,
+) -> None:
+    """Validate every Lingchu-enabled adapter is registered by NoneBot."""
+    raw_config = (
+        _global_configured_adapters()
+        if configured is _UNSET
+        else cast("AdapterConfig", configured)
+    )
+    enabled = resolve_enabled_adapters(raw_config)
+    registered = resolve_registered_adapters(registered_adapter_names)
+    for adapter_id in sorted(enabled - registered):
+        raise PlatformAdapterNotLoadedError(
+            adapter_id=adapter_id,
+            registered_adapters=frozenset(registered),
+        )
+
+
+def get_platform_profile(
+    adapter_name: str,
+    configured: AdapterConfig | object = _UNSET,
+) -> PlatformProfile | None:
+    """Resolve a concrete adapter name to its cross-platform profile."""
+    adapter_id = _resolve_known_adapter_id(adapter_name)
+    if adapter_id is None or not is_adapter_enabled(adapter_id, configured):
+        return None
+    return _ADAPTER_PROFILE_INDEX.get(adapter_id.casefold())
+
+
+def get_supported_adapters(
+    configured: AdapterConfig | object = _UNSET,
+) -> set[str]:
+    """Return NoneBot adapter identifiers implemented by this plugin."""
+    return resolve_enabled_adapters(configured)
+
+
+def get_supported_adapter_names() -> tuple[str, ...]:
+    """Return display names for startup logs and diagnostics."""
+    names = {
+        adapter_name
+        for profile in iter_platform_profiles()
+        for adapter_name in profile.adapter_names
+    }
+    return tuple(sorted(names))
+
+
+def get_protocol_implementations(
+    adapter_id: str | None = None,
+) -> tuple[ProtocolImplementationInfo, ...]:
+    """Return registered protocol implementations, optionally filtered by adapter."""
+    if adapter_id is None:
+        return _PROTOCOL_IMPLEMENTATIONS
+    return tuple(
+        impl for impl in _PROTOCOL_IMPLEMENTATIONS if impl.adapter_id == adapter_id
+    )
+
+
+def export_registry_for_seeding() -> dict[str, Any]:
+    """Export structured registry metadata for database seeding.
+
+    Returns a dict with keys:
+    - "platforms": list of dicts with platform_id, display_name,
+      capabilities, implemented
+    - "adapters": list of dicts with adapter_id, platform_id,
+      display_name, nonebot_adapter_id
+    - "protocol_implementations": list of dicts with protocol_id,
+      adapter_id, display_name, module_path
+    """
+    platforms = [
+        {
+            "platform_id": profile.platform_id,
+            "display_name": profile.display_name,
+            "capabilities": json.dumps([
+                cap.value for cap in sorted(profile.capabilities)
+            ]),
+            "implemented": profile.implemented,
+        }
+        for profile in PLATFORM_PROFILES
+    ]
+    adapters: list[dict[str, Any]] = []
+    for profile in PLATFORM_PROFILES:
+        for display_name, nonebot_id in profile.adapter_name_map:
+            adapters.append({
+                "adapter_id": nonebot_id,
+                "platform_id": profile.platform_id,
+                "display_name": display_name,
+                "nonebot_adapter_id": nonebot_id,
+            })
+    # Deduplicate by adapter_id (adapter_name_map has multiple
+    # display names per adapter)
+    seen: set[str] = set()
+    unique_adapters: list[dict[str, Any]] = []
+    for adapter in adapters:
+        if adapter["adapter_id"] not in seen:
+            seen.add(adapter["adapter_id"])
+            unique_adapters.append(adapter)
+    protocol_implementations = [
+        {
+            "protocol_id": impl.protocol_id,
+            "adapter_id": impl.adapter_id,
+            "display_name": impl.display_name,
+            "module_path": impl.module_path,
+        }
+        for impl in _PROTOCOL_IMPLEMENTATIONS
+    ]
+    return {
+        "platforms": platforms,
+        "adapters": unique_adapters,
+        "protocol_implementations": protocol_implementations,
+    }

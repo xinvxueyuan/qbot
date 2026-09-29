@@ -1,0 +1,105 @@
+"""Message store runtime hook handlers."""
+
+from __future__ import annotations
+
+from nonebot import logger
+from nonebot.adapters import Bot, Event
+from nonebot.matcher import Matcher
+from nonebot.message import (
+    event_postprocessor,
+    event_preprocessor,
+    run_postprocessor,
+    run_preprocessor,
+)
+from nonebot.typing import T_State
+
+from ...core.async_utils import fire_and_forget
+from ...core.config import plugin_config
+from ...services.message_store import (
+    STATE_KEY,
+    handle_event_received,
+    handle_matcher_result,
+)
+from ..adapters import (
+    MessageIdentity,
+    extract_message_identity,
+    normalize_message_event,
+)
+
+
+@event_preprocessor
+async def message_store_preprocessor(
+    bot: Bot,
+    event: Event,
+    state: T_State,
+) -> None:
+    """Store incoming event metadata before matcher processing."""
+    if not plugin_config.message_store_enabled:
+        return
+    try:
+        identity = extract_message_identity(bot, event)
+    except Exception:
+        # Storage failures must never abort event dispatch, otherwise a bug here
+        # would silence every group command for the event.
+        logger.exception("Message store identity extraction failed; skipping storage")
+        return
+    if identity is None:
+        return
+    state[STATE_KEY] = identity
+    # Heavy payload normalization (JSON serialization of the whole event) runs
+    # in the background task so the event loop is not blocked per message.
+    fire_and_forget(record_event_received_job(bot, event), name="record_event_received")
+
+
+async def record_event_received_job(bot: Bot, event: Event) -> None:
+    """Normalize and persist an event off the event loop."""
+    try:
+        normalized = normalize_message_event(bot, event)
+    except Exception:
+        logger.exception("Message store normalization failed; skipping storage")
+        return
+    if normalized is None:
+        return
+    await handle_event_received(normalized)
+
+
+@event_postprocessor
+async def message_store_postprocessor(
+    bot: Bot,
+    event: Event,
+    state: T_State,
+) -> None:
+    """Reserved event postprocessor hook for future aggregate updates."""
+    _ = (bot, event, state)
+
+
+@run_preprocessor
+async def message_store_run_preprocessor(
+    matcher: Matcher,
+    bot: Bot,
+    event: Event,
+    state: T_State,
+) -> None:
+    """Reserved run preprocessor hook for future matcher timing."""
+    _ = (matcher, bot, event, state)
+
+
+@run_postprocessor
+async def message_store_run_postprocessor(
+    matcher: Matcher,
+    exception: Exception | None,
+    bot: Bot,
+    event: Event,
+    state: T_State,
+) -> None:
+    """Update message processing status after a matcher run."""
+    _ = (bot, event)
+    if not plugin_config.message_store_enabled:
+        return
+    identity = state.get(STATE_KEY)
+    if not isinstance(identity, MessageIdentity):
+        return
+    fire_and_forget(
+        handle_matcher_result(identity, matcher, exception),
+        name="record_matcher_result",
+    )

@@ -1,0 +1,71 @@
+from importlib import import_module
+from typing import Any
+
+from arclet.alconna import Alconna, Args
+from nonebot import require
+from nonebot.internal.matcher.matcher import Matcher
+
+require("nonebot_plugin_alconna")
+from nonebot_plugin_alconna import on_alconna
+
+from .triggers import COMMAND_TRIGGERS
+
+_LEAVE_GROUP = COMMAND_TRIGGERS["leave_group"]
+_RESTART_PROTOCOL_ENDPOINT = COMMAND_TRIGGERS["restart_protocol_endpoint"]
+_RESTART_APP = COMMAND_TRIGGERS["restart_app"]
+_RESET_RUNTIME_CONFIG = COMMAND_TRIGGERS["reset_runtime_config"]
+
+quit_group_cmd: type[Matcher] = on_alconna(
+    command=Alconna(_LEAVE_GROUP.primary),
+    aliases=_LEAVE_GROUP.aliases,
+    priority=805,
+    block=True,
+    use_cmd_sep=False,
+    use_cmd_start=True,
+)
+
+restart_protocol_endpoint_cmd: type[Matcher] = on_alconna(
+    command=Alconna(
+        _RESTART_PROTOCOL_ENDPOINT.primary,
+        Args["platform?", str, None],
+    ),
+    aliases=_RESTART_PROTOCOL_ENDPOINT.aliases,
+    priority=805,
+    block=True,
+    use_cmd_sep=False,
+    use_cmd_start=True,
+)
+
+restart_app_cmd: type[Matcher] = on_alconna(
+    command=Alconna(_RESTART_APP.primary),
+    aliases=_RESTART_APP.aliases,
+    priority=805,
+    block=True,
+    use_cmd_sep=False,
+    use_cmd_start=True,
+)
+
+reset_runtime_config_cmd: type[Matcher] = on_alconna(
+    command=Alconna(_RESET_RUNTIME_CONFIG.primary),
+    aliases=_RESET_RUNTIME_CONFIG.aliases,
+    priority=805,
+    block=True,
+    use_cmd_sep=False,
+    use_cmd_start=True,
+)
+
+_LAZY_EXPORTS = {
+    "onebot11_quit_group": "..adapters.onebot11.default.lifecycle",
+    "onebot11_restart_protocol_endpoint": "..adapters.onebot11.default.lifecycle",
+    "onebot11_restart_app": "..adapters.onebot11.default.lifecycle",
+    "onebot11_reset_runtime_config": "..adapters.onebot11.default.lifecycle",
+}
+
+
+def __getattr__(name: str) -> Any:
+    if name not in _LAZY_EXPORTS:
+        raise AttributeError(name)
+    module = import_module(_LAZY_EXPORTS[name], __package__)
+    value = getattr(module, name)
+    globals()[name] = value
+    return value
