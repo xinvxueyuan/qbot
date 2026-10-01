@@ -26,3 +26,6 @@
 	path = vendor/nonebot-plugin-auto-unmute-superuser
 	url = https://github.com/xinvxueyuan/nonebot-plugin-auto-unmute-superuser.git
 	branch = main
+[submodule "vendor/nonebot-plugin-pixiv-novel"]
+	path = vendor/nonebot-plugin-pixiv-novel
+	url = https://github.com/xinvxueyuan/nonebot-plugin-pixiv-novel.git

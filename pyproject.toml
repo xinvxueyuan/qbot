@@ -52,6 +52,13 @@ dependencies = [
     "yarl==1.23.0",
     "puremagic>=2.2.0",
     "pillow>=12.3.0",
+    # --- pixiv 小说订阅插件 ---
+    "nonebot-plugin-htmlkit==0.1.0rc5",
+    "pixivpy3==3.7.5",
+    "cloudscraper==1.2.71",
+    "requests==2.34.2",
+    "requests-toolbelt==1.0.0",
+    "urllib3==2.8.0",
 ]
 
 [dependency-groups]
@@ -86,4 +93,5 @@ plugin_dirs = [
     "vendor/nonebot-plugin-merge-forward/src/plugins",
     "vendor/nonebot-plugin-ciyuan-image/src/plugins",
     "vendor/nonebot-plugin-auto-unmute-superuser/src/plugins",
+    "vendor/nonebot-plugin-pixiv-novel/src/plugins",
 ]
