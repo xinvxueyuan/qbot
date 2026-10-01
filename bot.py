@@ -53,6 +53,22 @@ _LINGCHU_SRC = _PROJECT_ROOT / "vendor" / "lingchu-bot" / "src" / "plugins"
 if _LINGCHU_SRC.is_dir() and str(_LINGCHU_SRC) not in sys.path:
     sys.path.append(str(_LINGCHU_SRC))
 
+# ---------------------------------------------------------------------------
+# 表态库：`nonebot_plugin_message_reaction`
+#
+# pixiv 插件用 `from nonebot_plugin_message_reaction import with_reaction` 接表态，
+# 但 NoneBot 把插件导入成 `vendor.<仓库>.src.plugins.<包>` 这种长名 ——
+# **裸包名不在 sys.path 上**，直接 import 会失败。
+# 后果不是报错而更隐蔽：pixiv 插件里那次 import 有降级替身，
+# 于是表态功能会**静默消失**（卡片照发、表情永远没有），日志里只有一行 info。
+#
+# 所以把这个目录也挂上 sys.path（与上面 lingchu 同一套办法）。
+# 该目录里只有表态库一个包（无 `_` 开头的兄弟模块），NoneBot 照常按 plugin_dirs 加载它。
+# ---------------------------------------------------------------------------
+_REACTION_SRC = _PROJECT_ROOT / "vendor" / "nonebot-plugin-message-reaction" / "src" / "plugins"
+if _REACTION_SRC.is_dir() and str(_REACTION_SRC) not in sys.path:
+    sys.path.append(str(_REACTION_SRC))
+
 # 初始化（自动读 .env / .env.{ENVIRONMENT}，默认 dev → .env.dev）
 nonebot.init()
 
