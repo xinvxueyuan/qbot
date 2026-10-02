@@ -92,7 +92,11 @@ plugin_dirs = [
     "vendor/nonebot-plugin-parser-lite/src",
     "vendor/nonebot-plugin-merge-forward/src/plugins",
     "vendor/nonebot-plugin-ciyuan-image/src/plugins",
-    "vendor/nonebot-plugin-auto-unmute-superuser/src/plugins",
+    # 停用（2026-10-02 应用户要求）：超管抽奖后 1 秒就被它解禁，抽奖对超管失效。
+    # 它没有配置级开关（SUPERUSER_UNMUTE_GROUPS 空 = 全部群；POLL_ENABLED 只管轮询，
+    # 事件驱动那条照跑），故唯一可靠的停用方式是根本不加载。子模块仍在（钉定版本），
+    # 恢复 = 注释掉下面这行前面的 # 并重启。
+    # "vendor/nonebot-plugin-auto-unmute-superuser/src/plugins",
     "vendor/nonebot-plugin-pixiv-novel/src/plugins",
     "vendor/nonebot-plugin-message-reaction/src/plugins",
     "vendor/nonebot-plugin-lottery/src/plugins",
