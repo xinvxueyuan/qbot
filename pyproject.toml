@@ -95,4 +95,5 @@ plugin_dirs = [
     "vendor/nonebot-plugin-auto-unmute-superuser/src/plugins",
     "vendor/nonebot-plugin-pixiv-novel/src/plugins",
     "vendor/nonebot-plugin-message-reaction/src/plugins",
+    "vendor/nonebot-plugin-lottery/src/plugins",
 ]

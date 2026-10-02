@@ -33,3 +33,6 @@
 	path = vendor/nonebot-plugin-message-reaction
 	url = https://github.com/xinvxueyuan/nonebot-plugin-message-reaction.git
 	branch = main
+[submodule "vendor/nonebot-plugin-lottery"]
+	path = vendor/nonebot-plugin-lottery
+	url = https://github.com/xinvxueyuan/nonebot-plugin-lottery.git
