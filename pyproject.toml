@@ -101,4 +101,5 @@ plugin_dirs = [
     "vendor/nonebot-plugin-message-reaction/src/plugins",
     "vendor/nonebot-plugin-lottery/src/plugins",
     "vendor/nonebot-plugin-waifu/src/plugins",
+    "vendor/nonebot-plugin-info/src/plugins",
 ]

@@ -39,3 +39,6 @@
 [submodule "vendor/nonebot-plugin-waifu"]
 	path = vendor/nonebot-plugin-waifu
 	url = https://github.com/xinvxueyuan/nonebot-plugin-waifu.git
+[submodule "vendor/nonebot-plugin-info"]
+	path = vendor/nonebot-plugin-info
+	url = https://github.com/xinvxueyuan/nonebot-plugin-info.git
