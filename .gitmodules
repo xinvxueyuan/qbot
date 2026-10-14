@@ -42,3 +42,7 @@
 [submodule "vendor/nonebot-plugin-info"]
 	path = vendor/nonebot-plugin-info
 	url = https://github.com/xinvxueyuan/nonebot-plugin-info.git
+[submodule "vendor/nonebot-plugin-pixiv-illust"]
+	path = vendor/nonebot-plugin-pixiv-illust
+	url = https://github.com/xinvxueyuan/nonebot-plugin-pixiv-illust.git
+	branch = main

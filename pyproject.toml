@@ -102,4 +102,5 @@ plugin_dirs = [
     "vendor/nonebot-plugin-lottery/src/plugins",
     "vendor/nonebot-plugin-waifu/src/plugins",
     "vendor/nonebot-plugin-info/src/plugins",
+    "vendor/nonebot-plugin-pixiv-illust/src/plugins",
 ]
