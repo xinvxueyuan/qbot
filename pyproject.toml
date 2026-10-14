@@ -1,7 +1,7 @@
 [project]
 name = "qbot"
 version = "0.1.0"
-description = "原生 NoneBot2 机器人（替代 zhenxun-bot，承载 7 个零耦合插件）"
+description = "原生 NoneBot2 机器人（替代 zhenxun-bot，承载 12 个零耦合插件）"
 requires-python = ">=3.13, <3.14"
 # 依赖由 `derive_deps.py` 从 zhenxun venv 的**已验证可用版本集**反推（模块名 → 发行包）。
 # 全部 == 锁定：目标是「迁移后行为与迁移前完全一致」，不接受版本漂移。
