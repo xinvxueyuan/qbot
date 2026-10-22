@@ -40,6 +40,7 @@ QBot —— 原生 NoneBot2 宿主：**13 个插件以 git 子模块管理（12 
 | `vendor/nonebot-plugin-waifu` | xinvxueyuan | 今日老婆 + 群关系图（Chromium 出图） | 启用 |
 | `vendor/nonebot-plugin-info` | xinvxueyuan | 功能菜单（读各插件 `__plugin_meta__.extra`） | 启用 |
 | `vendor/nonebot-plugin-pixiv-illust` | xinvxueyuan | pixiv 插画 / 漫画订阅推送（多页，R18 可打码） | 启用 |
+| `vendor/nonebot-plugin-checkin` | xinvxueyuan | 群签到：每日签到攒积分、连续天数加成、群内积分排行（图卡含昵称与头像） | 启用 |
 
 子模块在父仓里记录的是**钉定提交 SHA**；`.gitmodules` 里的 `branch` 只在 `git submodule update --remote`
 时生效，日常部署以父仓指针为准。`vendor/nonebot-plugin-auto-unmute-superuser` 的子模块仍在仓内（钉定版本），

@@ -19,7 +19,7 @@
    `git -C vendor/<repo> rev-parse HEAD` 与 `git submodule status` 两处一致。
 7. 父仓库的子模块指针**必须 commit + push**，否则指针不入库。
 
-## 当前 13 个子模块 / 12 个启用（均在 `vendor/`）
+## 当前 14 个子模块 / 13 个启用（均在 `vendor/`）
 
 数字以 `.gitmodules`（13 个 `path`）与 `pyproject.toml` 的 `plugin_dirs`（12 条未注释）为准；
 下表与 `.gitmodules` 逐项对应，「停用」= 子模块仍在仓内（钉定 SHA），但 `plugin_dirs` 里已注释掉、不加载。
@@ -39,6 +39,7 @@
 | `nonebot-plugin-waifu/src/plugins` | 今日老婆 + 群关系图 | xinvxueyuan/nonebot-plugin-waifu |
 | `nonebot-plugin-info/src/plugins` | 功能菜单 | xinvxueyuan/nonebot-plugin-info |
 | `nonebot-plugin-pixiv-illust/src/plugins` | pixiv 插画/漫画订阅 | xinvxueyuan/nonebot-plugin-pixiv-illust |
+| `nonebot-plugin-checkin/src/plugins` | 群签到（积分/连续天数/排行） | xinvxueyuan/nonebot-plugin-checkin |
 
 外加基础设施插件：alconna、apscheduler、htmlkit、htmlrender、localstore、orm、uninfo、waiter。
 
