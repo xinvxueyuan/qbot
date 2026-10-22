@@ -5,7 +5,7 @@
 [submodule "vendor/lingchu-bot"]
 	path = vendor/lingchu-bot
 	url = https://github.com/xinvxueyuan/lingchu-bot.git
-	branch = feat/webui
+	branch = main
 [submodule "vendor/nonebot-plugin-llbot-alert"]
 	path = vendor/nonebot-plugin-llbot-alert
 	url = https://github.com/xinvxueyuan/nonebot-plugin-llbot-alert.git

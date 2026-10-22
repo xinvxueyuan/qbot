@@ -1,6 +1,6 @@
 # AGENTS.md — qbot（原生 NoneBot2 QQ 机器人）
 
-腾讯云 `203.0.113.10` 上的生产 QQ 机器人，2026-09-29 由 zhenxun_bot 割接而来。
+腾讯云上的生产 QQ 机器人（地址略），2026-09-29 由 zhenxun_bot 割接而来。
 服务 `qbot.service`，端口 `8080`，机器人 QQ `3128682634`。旧 zhenxun 保留可回滚。
 
 ⚠️ **单实例约束**：qbot 与 zhenxun 争 8080 和同一个 QQ 号，**绝不能同时 active**
@@ -42,7 +42,7 @@
 
 ## 数据库（踩过大坑）
 
-- 共用 ORM 库：`/root/.local/share/nonebot2/nonebot_plugin_orm/db.sqlite3`。
+- 共用 ORM 库：`~/.local/share/nonebot2/nonebot_plugin_orm/db.sqlite3`（示例路径，按实际 `LOCALSTORE_DATA_DIR` 展开）。
 - ⚠️ `ALEMBIC_STARTUP_CHECK=false` 时，ORM 的 `migrate.sync` 会 **DROP 掉本进程没有模型的表**。
   所以**隔离干跑必须**把 `LOCALSTORE_DATA_DIR` 指到别的目录，否则会删生产表。
 - 验收必须核对**表数 / 表名**与重启前一致。
@@ -51,9 +51,9 @@
 ## 部署流程（照这个顺序）
 
 1. **只读**检查现状：父/子 SHA、`systemctl is-active`、ORM 表数。
-2. 备份：`cp -a .env.dev /root/qbot_env.dev.bak-<TS>`。
+2. 备份：`cp -a .env.dev ~/qbot_env.dev.bak-<TS>`（示例路径）。
 3. 升子模块：`cd vendor/<repo> && git fetch && git checkout <SHA>`
-   （境外网络走 `https_proxy=http://127.0.0.1:<port>`）。
+   （境外网络走 `https_proxy=http://127.0.0.1:<本地代理端口>`）。
 4. 只有依赖变更时才装依赖。
 5. 父仓库：`git add vendor/... && git commit && git push`。
 6. 重启：`systemctl restart qbot.service`。
