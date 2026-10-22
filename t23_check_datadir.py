@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import os
 import sys
+from pathlib import Path
 
 # 显式清掉隔离变量，模拟 systemd 启动时的干净环境
 os.environ.pop("LOCALSTORE_DATA_DIR", None)
@@ -27,7 +28,8 @@ BASE = ls.BASE_DATA_DIR
 ORM_DIR = BASE / "nonebot_plugin_orm"
 db = ORM_DIR / "db.sqlite3"
 
-EXPECTED = "/root/.local/share/nonebot2/nonebot_plugin_orm"
+#: 与家目录相对: root 用户下即其家目录的 .local/share, 不写死服务器绝对路径
+EXPECTED = Path.home() / ".local/share/nonebot2/nonebot_plugin_orm"
 
 print(f"  BASE_DATA_DIR          : {BASE}")
 print(f"  环境变量 LOCALSTORE_DATA_DIR : {os.environ.get('LOCALSTORE_DATA_DIR', '(未设置)')}")
@@ -41,7 +43,7 @@ print(f"  DB 存在                : {db.is_file()}")
 if db.is_file():
     print(f"  DB 大小                : {db.stat().st_size / 1024 / 1024:.1f} MB")
 
-ok = str(ORM_DIR) == EXPECTED
+ok = str(ORM_DIR) == str(EXPECTED)
 print()
 print("  ✅ 与 zhenxun 同一个库 —— 零数据迁移" if ok else "  ❌ 路径不一致！停下排查")
 
