@@ -60,6 +60,8 @@ dependencies = [
     "requests==2.34.2",
     "requests-toolbelt==1.0.0",
     "urllib3==2.8.0",
+    "blitz-py>=0.6.0",
+    "regex>=2024.11.6",
 ]
 
 [dependency-groups]
