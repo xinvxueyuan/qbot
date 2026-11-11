@@ -93,7 +93,7 @@ plugin_dirs = [
     "vendor/nonebot-plugin-fanqie-verify/src/plugins",
     "vendor/lingchu-bot/src/plugins",
     "vendor/nonebot-plugin-llbot-alert/src/plugins",
-    # "vendor/nonebot-plugin-parser-lite/src",  # 临时停用：1.4.0 需本地编译 qmc 扩展
+    "vendor/nonebot-plugin-parser-lite/src",
     "vendor/nonebot-plugin-merge-forward/src/plugins",
     "vendor/nonebot-plugin-ciyuan-image/src/plugins",
     # 停用（2026-10-02 应用户要求）：超管抽奖后 1 秒就被它解禁，抽奖对超管失效。
