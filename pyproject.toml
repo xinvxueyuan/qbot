@@ -37,8 +37,9 @@ dependencies = [
     "msgspec==0.22.0",
     "openai==3.49.0",
     "packaging==26.3",
-    # playwright 必须锁 1.57.0：/root/.cache/ms-playwright 里已装的浏览器
-    # 是 chromium-1200（对应 1.57.0），换版本会要求别的 revision → 渲染失败。
+    # playwright 已升至 1.65.0，配套浏览器为 chromium-1254，已在服务器上执行
+    # `uv run playwright install chromium` 安装。升级 playwright 版本后必须重跑该命令，
+    # 否则会去找未安装的 revision → 渲染失败。
     "playwright==1.65.0",
     "protobuf==7.36.2",
     "pydantic==2.14.3",
