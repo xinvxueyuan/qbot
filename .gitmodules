@@ -49,3 +49,6 @@
 [submodule "vendor/nonebot-plugin-checkin"]
 	path = vendor/nonebot-plugin-checkin
 	url = https://github.com/xinvxueyuan/nonebot-plugin-checkin.git
+[submodule "vendor/nonebot-plugin-image-guard"]
+	path = vendor/nonebot-plugin-image-guard
+	url = https://github.com/xinvxueyuan/nonebot-plugin-image-guard.git

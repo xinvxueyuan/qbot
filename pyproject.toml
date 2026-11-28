@@ -108,4 +108,5 @@ plugin_dirs = [
     "vendor/nonebot-plugin-info/src/plugins",
     "vendor/nonebot-plugin-pixiv-illust/src/plugins",
     "vendor/nonebot-plugin-checkin/src/plugins",
+    "vendor/nonebot-plugin-image-guard/src/plugins",
 ]
